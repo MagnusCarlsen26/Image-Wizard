@@ -44,3 +44,77 @@ def transparent_bg(image_old, boundary_pts):
 
 
 
+
+def image_enhance(cv2_image, boundary_pts):
+  
+    # Iterate through each point inside the boundary and divide by 9
+    for y in range(cv2_image.shape[0]):
+        for x in range(cv2_image.shape[1]):
+            if cv2.pointPolygonTest(boundary_pts, (x, y), False) >= 0:
+                cv2_image[y, x] //= 9  # Divide each channel by 9
+    
+    return cv2_image
+
+
+def darken(cv2_image, boundary_pts):
+    cv2_image = cv2_image.copy()
+    for y in range(cv2_image.shape[0]):
+        for x in range(cv2_image.shape[1]):
+            if cv2.pointPolygonTest(boundary_pts, (x, y), False) >= 0:
+                cv2_image[y, x] -= 128  # Divide each channel by 9
+    
+    return cv2_image
+
+def lower_contrast(cv2_image, boundary_pts):
+    cv2_image = cv2_image.copy()
+    for y in range(cv2_image.shape[0]):
+        for x in range(cv2_image.shape[1]):
+            if cv2.pointPolygonTest(boundary_pts, (x, y), False) >= 0:
+                cv2_image[y, x] //= 2  # Divide each channel by 9
+    
+    return cv2_image
+
+def non_linear_lower(cv2_image, boundary_pts):
+    cv2_image = cv2_image.copy()
+    for y in range(cv2_image.shape[0]):
+        for x in range(cv2_image.shape[1]):
+            if cv2.pointPolygonTest(boundary_pts, (x, y), False) >= 0:
+                cv2_image[y, x] = ((cv2_image[y, x]/255)**(1/3))*255  # Divide each channel by 9
+    
+    return cv2_image
+
+def invert(cv2_image, boundary_pts):
+    cv2_image = cv2_image.copy()
+    for y in range(cv2_image.shape[0]):
+        for x in range(cv2_image.shape[1]):
+            if cv2.pointPolygonTest(boundary_pts, (x, y), False) >= 0:
+                cv2_image[y, x] = 255 - cv2_image[y, x] # Divide each channel by 9
+    
+    return cv2_image
+
+def lighten(cv2_image, boundary_pts):
+    cv2_image = cv2_image.copy()
+    for y in range(cv2_image.shape[0]):
+        for x in range(cv2_image.shape[1]):
+            if cv2.pointPolygonTest(boundary_pts, (x, y), False) >= 0:
+                cv2_image[y, x] *= 3  # Divide each channel by 9
+    
+    return cv2_image
+
+def raise_contrast(cv2_image, boundary_pts):
+    cv2_image = cv2_image.copy()
+    for y in range(cv2_image.shape[0]):
+        for x in range(cv2_image.shape[1]):
+            if cv2.pointPolygonTest(boundary_pts, (x, y), False) >= 0:
+                cv2_image[y, x] *= 2  # Divide each channel by 9
+    
+    return cv2_image
+
+def non_linear_raise(cv2_image, boundary_pts):
+    cv2_image = cv2_image.copy()
+    for y in range(cv2_image.shape[0]):
+        for x in range(cv2_image.shape[1]):
+            if cv2.pointPolygonTest(boundary_pts, (x, y), False) >= 0:
+                cv2_image[y, x] = ((cv2_image[y, x]/255)**(2))*255  # Divide each channel by 9
+    
+    return cv2_image

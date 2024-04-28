@@ -58,6 +58,8 @@ with col2:
     updated_widget.image(st.session_state.updatedimage,use_column_width=True)
 
 run = st.sidebar.checkbox('Run')
+if run:
+    stop = st.sidebar.button("Stop")
 color_picker = st.sidebar.color_picker("Choose a color", "#ff0000")  # Add a color picker
 st.sidebar.title("Upload Image")
 uploaded_file = st.sidebar.file_uploader("Choose an image...", type=["jpg", "jpeg","png"])
@@ -67,7 +69,8 @@ if uploaded_file:
     uploaded_widget.image(image,use_column_width=True)
     st.session_state.uploadedimage = image
 
-col_b1 , col_b2 , col_b3 , col_b4, col_b5 = st.columns(5)
+col_b1 , col_b2 , col_b3 , col_b4, col_b5  = st.columns(5)
+col_b7 , col_b8 , col_b9 = st.columns(3)
 
 with col_b1:
     button1 = st.button("B_Black_F_Green",use_container_width=True)
@@ -83,6 +86,20 @@ with col_b4:
 
 with col_b5:
     button5 = st.button("Transparent_BG",use_container_width=True)
+
+
+
+with col_b7:
+    button7 = st.button("lower_contrast",use_container_width=True)
+
+with col_b8:
+    button8 = st.button("non_linear_lower",use_container_width=True)
+
+with col_b9:
+    button9 = st.button("invert",use_container_width=True)
+
+
+
 
 if button1:
     if st.session_state.uploadedimage is not None:
@@ -129,8 +146,63 @@ if button5:
             updated_widget.image(st.session_state.updatedimage , use_column_width=True)
 
 
+
+if button7:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.lower_contrast(st.session_state.uploadedimage,boundary)
+            # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+if button8:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.non_linear_lower(st.session_state.uploadedimage,boundary)
+            # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+if button9:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.invert(st.session_state.uploadedimage,boundary)
+            # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+
+
 if st.button("Download Image"):
-  # ... rest of your code
+
   download_image = cv2.cvtColor(st.session_state.updatedimage, cv2.COLOR_BGR2RGB)
   download_link = create_download_link(download_image)
   st.markdown(download_link, unsafe_allow_html=True)
+
+
+if run:
+    cap = cv2.VideoCapture(0)
+    while run:
+        success, frame = cap.read()
+        frame = cv2.cvtColor(frame,cv2.COLOR_BGR2RGB)
+        if success:
+            st.session_state.uploadedimage = frame
+            uploaded_widget.image(st.session_state.uploadedimage, use_column_width=True)
+        if stop:
+            run = False
+            run = st.checkbox("Run", key="run",value=False)
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+    
+
+
+
+
+
+
+
