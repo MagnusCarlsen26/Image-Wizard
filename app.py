@@ -26,6 +26,18 @@ def create_download_link(image, file_label='Download Link', file_name='image.png
     href = f'<a href="data:image/png;base64,{encoded_image}" download="{file_name}">{file_label}</a>'
     return href
 
+def get_rgb_from_hex(hex_color):
+  """
+  Converts a hex color string (e.g., "#ff0000") to a list of RGB values (e.g., [255, 0, 0])
+  """
+  # Remove the leading "#" if present
+  hex_color = hex_color.lstrip("#")
+  # Check for valid hex length (6 digits)
+  if len(hex_color) != 6:
+      raise ValueError("Invalid hex color format. Please use #RRGGBB format.")
+  # Convert each hex digit to integer and multiply by 16 for proper base conversion
+  rgb_values = [int(hex_color[i:i+2], 16) for i in range(0, len(hex_color), 2)]
+  return rgb_values
 
 @st.cache_data
 def file_2_image(img_file):
@@ -65,7 +77,24 @@ with col2:
 
 
  
-color_picker = st.sidebar.color_picker("Choose a color", "#ff0000")  # Add a color picker
+chosen_color_hex = st.sidebar.color_picker("Choose a color for background", "#ff0000")
+
+# Create an empty text element to display RGB color
+color_code = st.sidebar.text("Chosen color in RGB:")
+
+if chosen_color_hex:
+    chosen_color_rgb = get_rgb_from_hex(chosen_color_hex)
+    # Update the text element with the chosen color (RGB format)
+    color_code.text(str(chosen_color_rgb))
+    # if st.session_state.uploadedimage is not None:
+    #     boundary = fetch_boundary(st.session_state.uploadedimage)
+    #     if boundary is not None:
+    #         updatedimage = md.transparent_bg(st.session_state.uploadedimage,boundary,chosen_color_rgb)
+    #         # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+    #         st.session_state.updatedimage = updatedimage
+    #         updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+      
+
 st.sidebar.title("Upload Image")
 uploaded_file = st.sidebar.file_uploader("Choose an image...", type=["jpg", "jpeg","png"])
 
@@ -145,7 +174,7 @@ if button5:
     if st.session_state.uploadedimage is not None:
         boundary = fetch_boundary(st.session_state.uploadedimage)
         if boundary is not None:
-            updatedimage = md.transparent_bg(st.session_state.uploadedimage,boundary)
+            updatedimage = md.transparent_bg(st.session_state.uploadedimage,boundary,chosen_color_rgb)
             # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
             st.session_state.updatedimage = updatedimage
             updated_widget.image(st.session_state.updatedimage , use_column_width=True)

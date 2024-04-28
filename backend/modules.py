@@ -31,7 +31,7 @@ def alpha_blending(image_old, boundary_pts, alpha):
     output_image = cv2.addWeighted(image, 1, filled_image, alpha / 255, 0)
     return output_image
 
-def transparent_bg(image_old, boundary_pts):
+def transparent_bg(image_old, boundary_pts,chosen_color_rgb):
     image = image_old.copy()
     # Create a blank mask with the same dimensions as the original image
     mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
@@ -39,7 +39,7 @@ def transparent_bg(image_old, boundary_pts):
     # Draw the contour of the boundary filled with white color on the mask
     cv2.drawContours(mask, [boundary_pts], 0, (255), thickness=cv2.FILLED)
     mask = np.logical_not(mask)
-    image[mask] = [0,255,0]
+    image[mask] = chosen_color_rgb
     return image
 
 
