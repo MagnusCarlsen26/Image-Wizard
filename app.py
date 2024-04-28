@@ -1,164 +1,205 @@
 import streamlit as st
 import cv2
-import numpy as np 
-# Define hardcoded_image_path globally
-global hardcoded_image_path, uploaded_image, updated_image, update_widget, uploaded_widget
-
-# Rest of your code
-
-hardcoded_image_path = None
-uploaded_image = None
-updated_image = None
-# update_widget,uploaded_widget = st.columns()
-update_widget = None #st.empty() 
-uploaded_widget = None #st.empty()
-from ultralytics import YOLO
+import numpy as np
 from backend import modules as md
+from ultralytics import YOLO
+import base64
+import time
 model = YOLO('yolov8n-seg.pt')
+st.set_page_config(layout="wide")
+if 'checkbox_state' not in st.session_state:
+    st.session_state.checkbox_state = False
+
+if 'uploadedimage' not in st.session_state:
+    st.session_state.uploadedimage = "demopic.png"
+
+if 'updatedimage' not in st.session_state:
+    st.session_state.updatedimage = "demopic.png"
+
+def get_base64_of_bin_file(image):
+    _, buffer = cv2.imencode('.png', image)
+    return base64.b64encode(buffer).decode()
+
+# Function to create a download link with base64 data
+def create_download_link(image, file_label='Download Link', file_name='image.png'):
+    encoded_image = get_base64_of_bin_file(image)
+    href = f'<a href="data:image/png;base64,{encoded_image}" download="{file_name}">{file_label}</a>'
+    return href
 
 
+@st.cache_data
 def file_2_image(img_file):
     if img_file is not None:
-
         file_bytes = np.asarray(bytearray(img_file.read()) , dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        # image = cv2.cvtColor(image , cv2.COLOR_BGR2RGB)
+        image = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
         return image
     else:
-        None
+        return None
 
+@st.cache_data
 def fetch_boundary(image):
     results = model(classes=0,source=image)
     masks = results[0].masks
     if masks is not None and masks.xy is not None and len(masks.xy) > 0:
         boundary_pts = np.array(masks.xy[0] , dtype=np.int32)
-        if(boundary_pts.size != 0):
-            update = md.back_black(image,boundary_pts)
+        if boundary_pts.size != 0:
+            return boundary_pts
         else:
-            update = image
+            return None
     else:
-        update = np.zeros_like(image)
-    return update
+        return None
 
-def main():
-    global hardcoded_image_path, uploaded_image, updated_image, update_widget, uploaded_widget
+project_title = st.title("CV Project")
+col1,col2 = st.columns(2)
 
-    st.markdown("<h1 style='text-align: center;'>CV Project</h1>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.sidebar.title("Options")
-    run = st.sidebar.checkbox('Run')
-    color_picker = st.sidebar.color_picker("Choose a color", "#ff0000")  # Add a color picker
-    print(color_picker)
-    st.sidebar.title("Upload Image")
-    uploaded_file = st.sidebar.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-    if uploaded_file:
-                # if uploaded_file is not None:
-        uploaded_widget.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
-        uploaded_image = file_2_image(uploaded_file)
-        print(uploaded_image)
-        if uploaded_image is not None:
-            updated_image = fetch_boundary(uploaded_image)
-            update_widget.image(updated_image, caption="Hardcoded Image", use_column_width=True)
-    
-    col1, col2 = st.columns(2)
-    
+with col1:
+    uploaded_widget = st.empty()
+    uploaded_widget.image(st.session_state.uploadedimage,use_column_width=True)
 
-    def f0():
-        if run:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (1).jpeg'
-        else:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download.jpeg'
-    def f1():
-        if run:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (2).jpeg'
-        else:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (1).jpeg'
-    def f2():
-        if run:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (3).jpeg'
-        else:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (2).jpeg'
-    def f3():
-        if run:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (4).jpeg'
-        else:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (3).jpeg'
-    def f4():
-        if run:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (5).jpeg'
-        else:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (4).jpeg'
-    def f5():
-        if run:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download.jpeg'
-        else:
-            return r'C:\Users\Mic\Desktop\CV\CV_Project\Image-Wizard\frontend\download (5).jpeg'
-    functions = [f0,f1,f2,f3,f4,f5]
+with col2:
+    updated_widget = st.empty()
+    updated_widget.image(st.session_state.updatedimage,use_column_width=True)
 
-    i = 0
-    cols = st.columns(6)
-    for j in cols:
-        with j:
-            if st.button(f'f{i}'):
-              
+
+
+
+ 
+color_picker = st.sidebar.color_picker("Choose a color", "#ff0000")  # Add a color picker
+st.sidebar.title("Upload Image")
+uploaded_file = st.sidebar.file_uploader("Choose an image...", type=["jpg", "jpeg","png"])
+
+if uploaded_file:
+    image = file_2_image(uploaded_file)
+    uploaded_widget.image(image,use_column_width=True)
+    st.session_state.uploadedimage = image
+
+col_b1 , col_b2 , col_b3 , col_b4, col_b5  = st.columns(5)
+col_b7 , col_b8 , col_b9 = st.columns(3)
+
+with col_b1:
+    button1 = st.button("B_Black_F_Green",use_container_width=True)
+
+with col_b2:
+    button2 = st.button("B_White_F_Red",use_container_width=True)
+
+with col_b3:
+    button3 = st.button("B_Normal_F_Green",use_container_width=True)
+
+with col_b4:
+    button4 = st.button("Alpha_Blend",use_container_width=True)
+
+with col_b5:
+    button5 = st.button("Transparent_BG",use_container_width=True)
+
+
+
+with col_b7:
+    button7 = st.button("lower_contrast",use_container_width=True)
+
+with col_b8:
+    button8 = st.button("non_linear_lower",use_container_width=True)
+
+with col_b9:
+    button9 = st.button("invert",use_container_width=True)
+
+
+
+
+if button1:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.back_black(st.session_state.uploadedimage,boundary)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+if button2:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.back_white(st.session_state.uploadedimage,boundary)
+            updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+if button3:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.back_normal(st.session_state.uploadedimage,boundary)
+            updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+if button4:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.alpha_blending(st.session_state.uploadedimage,boundary,128)
+            updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+if button5:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.transparent_bg(st.session_state.uploadedimage,boundary)
+            # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+
+
+if button7:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.lower_contrast(st.session_state.uploadedimage,boundary)
+            # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+if button8:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.non_linear_lower(st.session_state.uploadedimage,boundary)
+            # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+if button9:
+    if st.session_state.uploadedimage is not None:
+        boundary = fetch_boundary(st.session_state.uploadedimage)
+        if boundary is not None:
+            updatedimage = md.invert(st.session_state.uploadedimage,boundary)
+            # updatedimage = cv2.cvtColor(updatedimage , cv2.COLOR_BGR2RGB)
+            st.session_state.updatedimage = updatedimage
+            updated_widget.image(st.session_state.updatedimage , use_column_width=True)
+
+
+
+if st.button("Download Image"):
+
+  download_image = cv2.cvtColor(st.session_state.updatedimage, cv2.COLOR_BGR2RGB)
+  download_link = create_download_link(download_image)
+  st.markdown(download_link, unsafe_allow_html=True)
+
+isrunning = False
+cap = None  # Initialize cap outside the loop
+
+
+
             
-                print("f0 clicked")
-                print(updated_image)
-                if uploaded_image is not None:
-                    updated_image = fetch_boundary(uploaded_image)
-                    cv2.imshow("test",updated_image )
-                    cv2.waitKey(0)
-                    cv2.destroyAllWindows()
-                    update_widget.image(updated_image, caption="Hardcoded Image", use_column_width=True)
-            
-                else:
-                    updated_image = None
-                    update_widget.empty()
 
-                st.write(f'f{i} is clicked')
-        i += 1
+
     
-    with col2:
-        # Create empty placeholder for updated image
-        update_widget = st.empty()
-        if uploaded_image is not None:
-            update_widget.image(updated_image, caption="Hardcoded Image", use_column_width=True)
-        # if updated_image:
-           
-        #     update_widget = st.image(updated_image, caption="Hardcoded Image", use_column_width=True)
-        # else:
-        #     updated_widget = st.text("No Data Available")
 
-    with col1:
-        uploaded_widget = st.empty()
-        if run:
-            st.sidebar.text("Live video is ON")
-         
-            FRAME_WINDOW = st.image([])
-            camera = cv2.VideoCapture(0)
-            while run:
-                _, frame = camera.read()
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                uploaded_image = frame
-                FRAME_WINDOW.image(frame)
-            else:
-                st.write('Stopped')
-        else:
-            st.sidebar.text("Live video is OFF")
 
-        st.subheader("Uploaded an Image")
-        upload_demo = cv2.imread("demopic.png")
-        uploaded_widget.image(upload_demo, caption="Uploaded Image", use_column_width=True)
-        # if uploaded_file is not None:
-        #     st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
-        #     uploaded_image = file_2_image(uploaded_file)
-        #     print(uploaded_image)
-        #     if uploaded_image is not None:
-        #         updated_image = fetch_boundary(uploaded_image)
-        #         update_widget.image(updated_image, caption="Hardcoded Image", use_column_width=True)
 
-           
 
-if __name__ == "__main__":
-    main()
+
+
+
